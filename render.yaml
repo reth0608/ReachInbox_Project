@@ -54,7 +54,6 @@ services:
     env: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    dockerCommand: ./start.sh
     plan: free
     envVars:
       - key: DATABASE_URL

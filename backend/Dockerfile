@@ -15,4 +15,4 @@ EXPOSE 4000
 # type-checked-in-CI choice for a project this size).
 # The actual process (API vs worker) is selected by docker-compose's
 # `command:` override for each service.
-CMD ["npx", "tsx", "src/index.ts"]
+CMD ["sh", "-c", "npm run db:migrate && npx tsx src/index.ts"]
