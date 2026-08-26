@@ -1,0 +1,101 @@
+databases:
+  - name: reachinbox-postgres
+    databaseName: reachinbox
+    user: reachinbox
+    plan: free
+
+services:
+  - type: redis
+    name: reachinbox-redis
+    plan: free
+    ipAllowList: []
+
+  - type: web
+    name: reachinbox-backend-api
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: npx tsx src/index.ts
+    plan: free
+    healthCheckPath: /health
+    preDeployCommand: npm run db:migrate
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: reachinbox-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: reachinbox-redis
+          property: connectionString
+      - key: NEXTAUTH_SECRET
+        sync: false
+      - key: ETHEREAL_USER
+        sync: false
+      - key: ETHEREAL_PASS
+        sync: false
+      - key: WORKER_CONCURRENCY
+        value: 5
+      - key: MIN_DELAY_MS
+        value: 2000
+      - key: PROCESSING_STALE_TIMEOUT_MS
+        value: 120000
+      - key: RECONCILIATION_ON_STARTUP
+        value: true
+      - key: CORS_ORIGIN
+        value: https://reachinbox-frontend.onrender.com
+
+  - type: worker
+    name: reachinbox-backend-worker
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: npx tsx src/worker.ts
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: reachinbox-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: reachinbox-redis
+          property: connectionString
+      - key: NEXTAUTH_SECRET
+        sync: false
+      - key: ETHEREAL_USER
+        sync: false
+      - key: ETHEREAL_PASS
+        sync: false
+      - key: WORKER_CONCURRENCY
+        value: 5
+      - key: MIN_DELAY_MS
+        value: 2000
+      - key: PROCESSING_STALE_TIMEOUT_MS
+        value: 120000
+
+  - type: web
+    name: reachinbox-frontend
+    env: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: free
+    dockerBuildArgs:
+      NEXT_PUBLIC_API_BASE_URL: https://reachinbox-backend-api.onrender.com
+    envVars:
+      - key: NEXTAUTH_URL
+        value: https://reachinbox-frontend.onrender.com
+      - key: NEXTAUTH_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: NEXT_PUBLIC_API_BASE_URL
+        value: https://reachinbox-backend-api.onrender.com
