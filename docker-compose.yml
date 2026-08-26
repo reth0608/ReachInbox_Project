@@ -1,0 +1,125 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: reachinbox
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [reachinbox]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # AOF persistence is what lets delayed BullMQ jobs survive a Redis
+    # restart, not just an application restart - see README "Restart and
+    # recovery".
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [reachinbox]
+
+  migrate:
+    build:
+      context: ./backend
+    command: ['npm', 'run', 'db:migrate']
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/reachinbox
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [reachinbox]
+
+  backend-api:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    command: ['npx', 'tsx', 'src/index.ts']
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/reachinbox
+      REDIS_URL: redis://redis:6379
+      PORT: '4000'
+      CORS_ORIGIN: http://localhost:3000
+    ports:
+      - '4000:4000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    networks: [reachinbox]
+
+  backend-worker:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    command: ['npx', 'tsx', 'src/worker.ts']
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/reachinbox
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks: [reachinbox]
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:4000
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:4000
+    ports:
+      - '3000:3000'
+    depends_on:
+      backend-api:
+        condition: service_healthy
+    networks: [reachinbox]
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  reachinbox:
+    driver: bridge
