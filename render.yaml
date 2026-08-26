@@ -54,6 +54,7 @@ services:
     env: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
+    dockerCommand: sh -c "npm run db:migrate && npx tsx src/index.ts"
     plan: free
     envVars:
       - key: DATABASE_URL
