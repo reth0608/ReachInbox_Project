@@ -4,7 +4,19 @@ import { createRedisConnection, redis } from './queue/redisClient';
 import { processSendEmailJob } from './queue/jobs/sendEmail';
 import { env } from './config/env';
 import { childLogger } from './utils/logger';
+import { createServer } from 'node:http';
 
+// Render's free tier only supports "web" services, not background workers.
+// This tiny HTTP server exists purely so Render treats this process as a
+// web service and health-checks it - it has nothing to do with the actual
+// job processing below, which is driven entirely by BullMQ.
+const healthPort = Number(process.env.PORT) || 8080;
+createServer((_req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('worker ok');
+}).listen(healthPort, () => {
+  log.info({ healthPort }, 'worker health endpoint listening');
+});
 const log = childLogger('worker');
 
 const worker = new Worker<EmailJobPayload>(
