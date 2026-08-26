@@ -14,7 +14,7 @@ COPY . .
 # only read server-side at request time and is supplied at container
 # runtime instead (see docker-compose.yml) - a placeholder here just lets
 # `next build` complete its route analysis.
-ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
+ARG NEXT_PUBLIC_API_BASE_URL=https://reachinbox-backend-api.onrender.com
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 ENV NEXTAUTH_SECRET=build-time-placeholder-overridden-at-runtime
 
