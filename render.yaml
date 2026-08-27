@@ -56,7 +56,6 @@ services:
     dockerContext: ./backend
     dockerCommand: npx tsx src/worker.ts
     plan: free
-    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
