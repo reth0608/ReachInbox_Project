@@ -49,7 +49,7 @@ services:
       - key: CORS_ORIGIN
         value: https://reachinbox-frontend-wtm5.onrender.com
 
-  - type: worker
+  - type: web
     name: reachinbox-backend-worker
     env: docker
     dockerfilePath: ./backend/Dockerfile
