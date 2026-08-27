@@ -13,7 +13,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   REDIS_URL: z.string().min(1, 'REDIS_URL is required'),
 
-  NEXTAUTH_SECRET: z.string().min(1, 'NEXTAUTH_SECRET is required (shared with frontend)'),
+  NEXTAUTH_SECRET: z.string().optional(),
 
   // Fallback SMTP credentials used only if a sender row has none configured.
   ETHEREAL_USER: z.string().optional(),

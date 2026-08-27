@@ -6,14 +6,21 @@ import { env } from './config/env';
 import { childLogger } from './utils/logger';
 import { createServer } from 'node:http';
 
-const healthPort = Number(process.env.PORT) || 8080;
-createServer((_req, res) => {
+const log = childLogger('worker');
+const healthPort = Number(process.env.PORT ?? process.env.HEALTH_PORT) || 8080;
+const healthServer = createServer((_req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('worker ok');
-}).listen(healthPort, () => {
+});
+
+healthServer.on('error', (err) => {
+  log.error({ err, healthPort }, 'worker health endpoint failed to start');
+  process.exit(1);
+});
+
+healthServer.listen(healthPort, () => {
   log.info({ healthPort }, 'worker health endpoint listening');
 });
-const log = childLogger('worker');
 
 const worker = new Worker<EmailJobPayload>(
   EMAIL_QUEUE_NAME,
@@ -61,6 +68,7 @@ log.info(
 
 async function shutdown(signal: string) {
   log.info({ signal }, 'shutting down worker');
+  healthServer.close();
   await worker.close();
   process.exit(0);
 }
