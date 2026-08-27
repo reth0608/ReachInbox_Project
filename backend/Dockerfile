@@ -6,7 +6,7 @@ COPY package.json package-lock.json* ./
 RUN npm install --no-audit --no-fund
 
 COPY . .
-
+RUN sed -i 's/\r$//' start-worker.sh && chmod +x start-worker.sh
 EXPOSE 4000
 
 # Runs directly via tsx rather than a separate tsc build step - see
