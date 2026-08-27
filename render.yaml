@@ -47,9 +47,9 @@ services:
       - key: RECONCILIATION_ON_STARTUP
         value: true
       - key: CORS_ORIGIN
-        value: https://reachinbox-frontend.onrender.com
+        value: https://reachinbox-frontend-wtm5.onrender.com
 
-  - type: web
+  - type: worker
     name: reachinbox-backend-worker
     env: docker
     dockerfilePath: ./backend/Dockerfile
@@ -88,7 +88,7 @@ services:
     plan: free
     envVars:
       - key: NEXTAUTH_URL
-        value: https://reachinbox-frontend.onrender.com
+        value: https://reachinbox-frontend-wtm5.onrender.com
       - key: NEXTAUTH_SECRET
         sync: false
       - key: GOOGLE_CLIENT_ID
@@ -96,4 +96,4 @@ services:
       - key: GOOGLE_CLIENT_SECRET
         sync: false
       - key: NEXT_PUBLIC_API_BASE_URL
-        value: https://reachinbox-backend-api.onrender.com
+        value: https://reachinbox-backend-api-njzb.onrender.com
