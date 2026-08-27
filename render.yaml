@@ -15,8 +15,7 @@ services:
     env: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    dockerCommand: npx tsx src/index.ts
-    preDeployCommand: npm run db:migrate
+    dockerCommand: sh ./start-api.sh
     plan: free
     healthCheckPath: /health
     envVars:
